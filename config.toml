@@ -1,0 +1,8 @@
+VENDOR_ID = 0xFC32
+PRODUCT_ID = 0x0287
+USAGE_PAGE = 0xFF60
+USAGE = 0x61
+
+latitude = 3.1282952
+longitude = 101.68548
+timezone = "Asia/Singapore"
