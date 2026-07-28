@@ -16,13 +16,12 @@ fn main() {
     let display = DisplayDevice::new()
         .expect("Could not connect to display");
     
-    let now = Local::now();
-    let mut last_minute = -1_i64;
-    let current_hour = now.hour() as i64;
-    let mut last_hour = -1_i64;
-    let mut initial_run:bool = true;
+        let mut last_minute = -1_i64;
+        let mut last_hour = -1_i64;
 
     loop {
+        let now = Local::now();
+        let current_hour = now.hour() as i64;
         let current_minute = now.timestamp() / 60;
 
         if current_minute != last_minute {
@@ -38,8 +37,7 @@ fn main() {
         }
 
         // Run hourly or when app is first started
-        if initial_run || current_hour!=last_hour {
-            initial_run = false;
+        if current_hour!=last_hour {
             last_hour = current_hour;
             let screen_right = construct_screen::build_display_right(&now);
             if let Err(e) = display.send_right(screen_right) {

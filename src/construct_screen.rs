@@ -1,4 +1,4 @@
-use chrono::{DateTime, Local};
+use chrono::{NaiveDateTime, DateTime, Local};
 use tokio::runtime::Runtime;
 use crate::weather::{self, Weather};
 
@@ -59,22 +59,16 @@ fn current_weather(now: &DateTime<Local>, weather: &Weather, count: usize) -> Ve
 
     (start..end)
         .map(|i| HourForecast {
-            time: weather.hourly.time[i][11..13].to_string(), // Get the hour only
+            time: weather.hourly.time[i].clone(),
             temperature: weather.hourly.temperature_2m[i],
             precipitation: weather.hourly.precipitation_probability[i],
         })
         .collect()
 }
 
-fn format_time(mut time: String) -> String {
-    let num: i32 = time.parse().unwrap();
-
-    if num < 12 {
-        time.push_str(" AM");
-    } else {
-        time.push_str(" PM");
-    }
-    time
+fn format_time(datetime: String) -> String {
+    let dt = NaiveDateTime::parse_from_str(datetime.as_str(), "%Y-%m-%dT%H:%M").unwrap();
+    dt.format("%I %p").to_string()
 }
 
 fn format_precipitation(percipitation: i32) -> String {
