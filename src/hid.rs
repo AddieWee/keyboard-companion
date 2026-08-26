@@ -23,12 +23,18 @@ impl DisplayDevice {
     }
 
     pub fn send_left(&self, text: String) -> Result<(), hidapi::HidError> {
-        send_text(&self.device, SCREEN_L_NEW, text)
+        if let Err(err) = send_text(&self.device, SCREEN_L_NEW, text) {
+            return Err(err);
+        }
+        Ok(())
     }
 
 
     pub fn send_right(&self, text: String) -> Result<(), hidapi::HidError> {
-        send_text(&self.device, SCREEN_R_NEW, text)
+        if let Err(err) = send_text(&self.device, SCREEN_R_NEW, text) {
+            return Err(err);
+        }
+        Ok(())
     }
 }
 

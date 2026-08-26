@@ -32,8 +32,6 @@ pub async fn get_weather(now: &DateTime<Local>) -> Result<Weather, Box<dyn std::
     .to_string();
 
     let (start_date, end_date) = get_dates(&now, 3);
-
-
     let client = Client::new();
 
     let weather = client

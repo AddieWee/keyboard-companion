@@ -12,41 +12,38 @@ pub struct HourForecast {
     pub precipitation: i32,
 }
 
-pub fn build_display_left(now: &DateTime<Local>) -> String {
-    format!(
+pub fn build_display_left(now: &DateTime<Local>) -> Result<String, Box<dyn std::error::Error>> {
+    Ok(format!(
         "\n{}\n\n\n{}",
         now.format("%H:%M"),
         now.format("%d\n%b").to_string().to_uppercase(),
+    ))
+}
+
+pub fn build_display_right(now: &DateTime<Local>) -> Result<String, Box<dyn std::error::Error>>  {
+    get_weather(now)
+}
+
+fn get_weather(now: &DateTime<Local>) -> Result<String, Box<dyn std::error::Error>>  {
+    let rt = Runtime::new().unwrap();
+    let api_data = rt.block_on(weather::get_weather(now))?;
+    let forecast = current_weather(now, &api_data, WEATHER_SIZE);
+
+    Ok(
+        forecast
+            .iter()
+            .map(|hour| {
+                format!(
+                    "{}-----{} C\n{}\n\n",
+                    format_time(hour.time.clone()),
+                    hour.temperature.round(),
+                    format_precipitation(hour.precipitation)
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("")
     )
 }
-
-pub fn build_display_right(now: &DateTime<Local>) -> String {
-    let output: String = get_weather(now);
-    format!("{}", output).to_string()
-}
-
-fn get_weather(now: &DateTime<Local>) -> String {
-    let rt = Runtime::new().unwrap();
-    // Update this hourly, move to a new function
-    let api_data = rt.block_on(weather::get_weather(now)).unwrap();
-
-    let forecast = current_weather(now, &api_data, WEATHER_SIZE);
-    
-    // Combine it into a single multiline string and return it
-    forecast
-        .iter()
-        .map(|hour| {
-            format!(
-                "{}-----{} C\n{}\n\n",
-                format_time(hour.time.clone()),
-                hour.temperature.round(),
-                format_precipitation(hour.precipitation)
-            )
-        })
-        .collect::<Vec<String>>()
-        .join("")
-}
-
 
 fn current_weather(now: &DateTime<Local>, weather: &Weather, count: usize) -> Vec<HourForecast> {
     // Format: "2026-07-27T14:00"
