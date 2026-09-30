@@ -1,6 +1,6 @@
 use chrono::{NaiveDateTime, DateTime, Local};
 use tokio::runtime::Runtime;
-use crate::weather::{self, Weather};
+use crate::weather::{self, AirQuality, Weather};
 
 
 const WEATHER_SIZE: usize = 3;
@@ -12,11 +12,12 @@ pub struct HourForecast {
     pub precipitation: i32,
 }
 
-pub fn build_display_left(now: &DateTime<Local>) -> Result<String, Box<dyn std::error::Error>> {
+pub fn build_display_left(now: &DateTime<Local>, aqi: Option<i32>) -> Result<String, Box<dyn std::error::Error>> {
     Ok(format!(
-        "\n{}\n\n\n{}",
+        "\n{}\n\n\n{}\n\n{}",
         now.format("%H:%M"),
         now.format("%d\n%b").to_string().to_uppercase(),
+        format_aqi(aqi),
     ))
 }
 
@@ -63,6 +64,22 @@ fn current_weather(now: &DateTime<Local>, weather: &Weather, count: usize) -> Ve
         .collect()
 }
 
+pub fn get_current_aqi(now: &DateTime<Local>) -> Result<Option<i32>, Box<dyn std::error::Error>> {
+    let rt = Runtime::new()?;
+    let air_quality = rt.block_on(weather::get_air_quality(now))?;
+    Ok(aqi_at(&air_quality, &now.format("%Y-%m-%dT%H:00").to_string()))
+}
+
+fn aqi_at(air_quality: &AirQuality, time: &str) -> Option<i32> {
+    let hourly = &air_quality.hourly;
+    let index = hourly.time.iter().position(|t| t == time)?;
+    hourly.us_aqi.get(index).copied().flatten()
+}
+
+fn format_aqi(aqi: Option<i32>) -> String {
+    aqi.map_or_else(|| "-".to_string(), |v| format!("AQI\n{v}"))
+}
+
 fn format_time(datetime: String) -> String {
     let dt = NaiveDateTime::parse_from_str(datetime.as_str(), "%Y-%m-%dT%H:%M").unwrap();
     dt.format("%I %p").to_string()
@@ -73,8 +90,10 @@ fn format_precipitation(percipitation: i32) -> String {
 
     if percipitation < 10 {
         percip_str.push_str("  %");
-    } else {
+    } else if percipitation < 100 {
         percip_str.push_str(" %");
+    } else {
+        percip_str.push_str("%");
     }
     percip_str
 }
